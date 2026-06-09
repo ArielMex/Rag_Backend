@@ -8,7 +8,7 @@
 
 Al utilizar esta estrategia, el flujo de trabajo configurado garantiza lo siguiente:
 
-* **Aislamiento del código:** Cada nuevo componente, corrección o ajuste del sistema lo desarrollamos en una rama completamente independiente que nace de la principal. Para no perder el orden en el repositorio, usamos prefijos cómo **feat/conexion-bd** para nuevas tareas o **fix/error-login** para correcciones. De esta manera cada integrante puede probar sus cambios sin afectar a los demás.
+* **Aislamiento del código:** Cada nuevo componente, corrección o ajuste del sistema lo desarrollamos en una rama completamente independiente que nace de la principal. Para no perder el orden en el repositorio, usamos prefijos como **feat/conexion-bd** para nuevas tareas o **fix/error-login** para correcciones. De esta manera cada integrante puede probar sus cambios sin afectar a los demás.
 
 * **Estabilidad del proyecto:** Nos aseguramos de que la rama **main** sea intocable de forma directa. La mantenemos protegida para que siempre contenga una versión estable, limpia y funcional. En pocas palabras, si alguien sube cambios a la rama principal, significa que ya fue probado y no existirán errores en el proyecto.
 
