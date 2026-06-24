@@ -8,12 +8,11 @@ from langchain_classic.chains.combine_documents import create_stuff_documents_ch
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
-# ¡PRIMER CAMBIO! Forzamos a cargar el .env antes de que empiece la clase
+# Forzamos a cargar el .env antes de que empiece la clase
 load_dotenv()
 
 class MotorRAG:
     def __init__(self, ruta_documentos: str):
-        # ¡SEGUNDO CAMBIO! Cambiar GOOGLE_API_KEY por GEMINI_API_KEY
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.ruta_documentos = ruta_documentos
         self.rag_chain = None
@@ -66,16 +65,16 @@ class MotorRAG:
 # PRUEBA PARA VERIFICAR QUE FUNCIONA CORRECTAMENTE 
 # """
 
-# # if __name__ == "__main__":
-# #     # Como se agrego load_dotenv() arriba, aquí abajo ya no es estrictamente necesario
-# #     ruta_docs_prueba = r"C:\Users\aryhd\OneDrive\Documentos\9no cuatri\Clase Gio\Rag_borrador\mis_documentos"
+# if __name__ == "__main__":
+#     # Como se agrego load_dotenv() arriba, aquí abajo ya no es estrictamente necesario
+#     ruta_docs_prueba = r"C:\Users\aryhd\OneDrive\Documentos\9no cuatri\Clase Gio\Rag_borrador\mis_documentos"
     
-# #     print("--- INICIANDO PRUEBA LOCAL DEL RAG ---")
-# #     motor = MotorRAG(ruta_docs_prueba)
+#     print("--- INICIANDO PRUEBA LOCAL DEL RAG ---")
+#     motor = MotorRAG(ruta_docs_prueba)
     
-# #     pregunta_prueba = "¿Qué es un commit o cómo se guardan los cambios en Git?"
-# #     print(f"\nUsuario: {pregunta_prueba}")
-# #     print("Pensando...\n")
+#     pregunta_prueba = "¿Qué es un commit o cómo se guardan los cambios en Git?"
+#     print(f"\nUsuario: {pregunta_prueba}")
+#     print("Pensando...\n")
     
-# #     respuesta = motor.consultar(pregunta_prueba)
-# #     print(f"Lumina: {respuesta}")
+#     respuesta = motor.consultar(pregunta_prueba)
+#     print(f"Lumina: {respuesta}")
