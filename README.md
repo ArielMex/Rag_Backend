@@ -6,6 +6,7 @@ Módulo de gestión de usuarios y autenticación con JWT para Python 3.12+ y Pos
 
 ## Estructura del proyecto
 
+
 ```
 auth_module/
 ├── app/
@@ -14,7 +15,9 @@ auth_module/
 │   │   ├── router.py            # Router principal v1
 │   │   └── endpoints/
 │   │       ├── auth.py          # /auth/login, /auth/refresh, /auth/me
-│   │       └── users.py         # /users/ CRUD
+│   │       |── users.py         # /users/ CRUD
+|   |       |── metricas.py      # /metricas/me, /metricas/me/racha, /metricas/me/examen
+│   |       └── salas.py         # /salas, /salas/me, /salas/unirse, /salas/{id}/salir, /salas/{id}/miembros
 │   ├── core/
 │   │   ├── config.py            # Variables de entorno (pydantic-settings)
 │   │   ├── security.py          # Hashing bcrypt + JWT
@@ -22,11 +25,19 @@ auth_module/
 │   ├── db/
 │   │   └── session.py           # Engine, SessionLocal, Base, get_db
 │   ├── models/
-│   │   └── user.py              # Modelo SQLAlchemy (tabla users)
+│   │   |── user.py              # Modelo SQLAlchemy (tabla users)
+│   |   |── metrica_estudio.py   # Modelo SQLAlchemy (tabla metricas_estudio)
+│   |   ├── sala_estudio.py      # Modelo SQLAlchemy (tabla salas_estudio)
+│   |   └── usuario_sala.py      # Modelo SQLAlchemy (tabla usuarios_salas)
 │   ├── schemas/
-│   │   └── user.py              # Schemas Pydantic (request/response)
+│   │   |── user.py              # Schemas Pydantic (request/response)
+│   |   |── metrica_estudio.py   # Schemas Pydantic (request/response)
+|   │   ├── sala_estudio.py      # Schemas Pydantic (request/response)
+|   │   └── usuario_sala.py      # Schemas Pydantic (join/response)
 │   ├── services/
-│   │   └── user_service.py      # Lógica de negocio
+│   │   |── user_service.py             # Lógica de negocio
+|   |   |── metrica_estudio_service.py  # Lógica de negocio
+|   |   └── sala_estudio_service.py     # Lógica de negocio
 │   └── main.py                  # Factory de FastAPI
 ├── alembic/                     # Migraciones de BD
 ├── tests/
@@ -98,6 +109,25 @@ Documentación interactiva: http://localhost:8000/docs
 | POST | `/users/{id}/deactivate` | Desactivar usuario | ADMIN |
 | DELETE | `/users/{id}` | Eliminar usuario | ADMIN |
 
+### Endpoints (`/api/v1/metricas`)
+
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| GET | `/metricas/me` | Obtiene (o crea) mis métricas de estudio | Bearer |
+| POST | `/metricas/me/racha` | Incrementa mi racha de días en 1 | Bearer |
+| POST | `/metricas/me/racha/reiniciar` | Reinicia mi racha a 0 | Bearer |
+| POST | `/metricas/me/examen` | Registra el puntaje de mi último examen | Bearer |
+
+### Endpoints (`/api/v1/salas`)
+ 
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| POST | `/salas/` | Crea una sala nueva (el creador queda como primer miembro) | Bearer |
+| GET | `/salas/me` | Lista las salas a las que pertenezco | Bearer |
+| POST | `/salas/unirse` | Une al usuario a una sala mediante `codigo_acceso` | Bearer |
+| DELETE | `/salas/{sala_id}/salir` | Abandona una sala | Bearer |
+| GET | `/salas/{sala_id}/miembros` | Lista los miembros de una sala | Bearer |
+
 ---
 
 ## Flujo de autenticación
@@ -152,3 +182,16 @@ pytest tests/ -v
 | `user` | Gestionar su propio perfil |
 | `moderator` | Acceso a rutas moderador + usuario |
 | `admin` | Acceso total (CRUD de usuarios) |
+
+
+### Notas de integración
+
+- METRICAS
+- El registro de métricas se crea de forma perezosa (`get_or_create_metrica`): si el usuario aún no tiene fila en `metricas_estudio`, se genera con valores en cero al primer acceso.
+- Falta registrar el router en `app/api/v1/router.py`:
+
+- SALAS ESTUDIO
+- El `codigo_acceso` se genera en el backend (6 caracteres, mayúsculas + dígitos) y se valida que sea único antes de guardar la sala; no se recibe desde el cliente.
+- `GET /salas/{sala_id}/miembros` actualmente es accesible para cualquier usuario autenticado, no solo para miembros de esa sala. Falta decidir si se restringe (ej. validar que `current_user` pertenezca a `usuarios_salas` antes de listar).
+- No hay endpoint de "eliminar sala" ni rol de "dueño de sala" todavía — la relación `usuarios_salas` trata a todos los miembros por igual. Si se necesita distinguir un admin de sala, habría que agregar un campo (ej. `rol` en `usuarios_salas`).
+- Falta registrar el router en `app/api/v1/router.py`:
