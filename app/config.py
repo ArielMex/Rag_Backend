@@ -1,1 +1,1 @@
-DATABASE_URL = "postgresql://postgres:admin@localhost:5432/rag_platform"
+DATABASE_URL = "postgresql://postgres:admin2468@localhost:5432/rag_db"

@@ -104,3 +104,23 @@ async def upload_document(
             "ruta_vector_id": nuevo_documento.ruta_vector_id
         }
     }
+
+# --- NUEVA RUTA AGREGADA PARA LISTAR DOCUMENTOS ---
+@router.get("/documents", status_code=status.HTTP_200_OK)
+def listar_documentos(sala_id: str, db: Session = Depends(get_db)):
+    """
+    Devuelve la lista de documentos asociados a una sala de estudio en PostgreSQL.
+    """
+    # Buscamos en la base de datos filtrando por el ID de la sala
+    documentos_db = db.query(Documento).filter(Documento.sala_id == sala_id).all()
+    
+    # Formateamos la respuesta en una lista para el frontend
+    resultado = []
+    for doc in documentos_db:
+        resultado.append({
+            "id": str(doc.id),
+            "nombre_archivo": doc.nombre_archivo,
+            "created_at": doc.created_at.isoformat() if doc.created_at else None
+        })
+        
+    return resultado
