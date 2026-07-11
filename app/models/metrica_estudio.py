@@ -1,7 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.db.database import Base
 
 class MetricaEstudio(Base):
     __tablename__ = "metricas_estudio"

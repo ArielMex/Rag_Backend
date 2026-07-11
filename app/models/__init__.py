@@ -1,4 +1,3 @@
-from app.db.database import Base
 from app.models.usuario import Usuario
 from app.models.sala_estudio import SalaEstudio
 from app.models.usuario_sala import UsuarioSala

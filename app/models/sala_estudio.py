@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.sql import func
-from app.db.database import Base
+from app.db.session import Base
 
 class SalaEstudio(Base):
     __tablename__ = "salas_estudio"
