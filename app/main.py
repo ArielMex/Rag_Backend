@@ -3,7 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.api.routes import documentos
+# 1. Agregamos "chat" a la importación
+from app.api.routes import documentos, chat
 from app.db.database import get_db
 
 app = FastAPI(
@@ -17,3 +18,5 @@ def read_root():
     return {"message": "Bienvenido a la API de la plataforma educativa RAG."}
 
 app.include_router(documentos.router)
+# 2. Registramos el router del chat para que el servidor lo escuche
+app.include_router(chat.router)

@@ -1,80 +1,60 @@
 import os
-from dotenv import load_dotenv  # <-- Asegúrate de que esté este import
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Forzamos a cargar el .env antes de que empiece la clase
 load_dotenv()
 
-class MotorRAG:
-    def __init__(self, ruta_documentos: str):
+class RagService:
+    def __init__(self):
+        """
+        Inicializa el servicio de LLM configurando la conexión con Gemini.
+        """
         self.api_key = os.getenv("GEMINI_API_KEY")
-        self.ruta_documentos = ruta_documentos
-        self.rag_chain = None
-        self._inicializar_motor()
+        if not self.api_key:
+            raise ValueError("API Key de Gemini no encontrada en las variables de entorno.")
+        
+        # 1. Configuramos el cerebro (Gemini 2.5 Flash)
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash", 
+            temperature=0.3, # Baja temperatura = respuestas más precisas y menos creativas/inventadas
+            google_api_key=self.api_key
+        )
+        
+        # 2. Mantenemos tu Prompt estricto para Lumina
+        self.system_prompt = """
+        Eres 'Lumina', el asistente virtual experto en estudio.
+        Usa el siguiente contexto extraído de los documentos del usuario para responder sus dudas:
+        
+        {context}
+        
+        Si el contexto no contiene la respuesta, responde exactamente:
+        'Información no disponible en tus documentos actuales.'
+        No utilices conocimientos externos ni inventes información.
+        """
+        
+        # 3. Armamos la plantilla del chat
+        self.prompt_template = ChatPromptTemplate.from_messages([
+            ("system", self.system_prompt),
+            ("human", "{input}"),
+        ])
 
-    def _inicializar_motor(self):
-        """Carga los PDFs, los vectoriza y prepara el modelo de Gemini."""
+        # 4. Creamos la cadena directa (Prompt -> LLM)
+        self.chain = self.prompt_template | self.llm
+
+    def generar_respuesta_chat(self, pregunta: str, contexto: str) -> str:
+        """
+        Toma el contexto recuperado de ChromaDB y la pregunta del usuario,
+        y se los envía a Gemini para generar una respuesta fundamentada.
+        """
         try:
-            loader = DirectoryLoader(self.ruta_documentos, glob="**/*.pdf", loader_cls=PyPDFLoader)
-            docs = loader.load()
-
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
-            splits = text_splitter.split_documents(docs)
-
-            # Aquí ya usa self.api_key de forma correcta
-            embeddings = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001", google_api_key=self.api_key)
-            vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
-
-            system_prompt = """
-            Eres 'Lumina', el asistente virtual experto en estudio.
-            Usa el siguiente contexto extraído de los documentos del usuario para responder sus dudas: {context}
-            Si el contexto no contiene la respuesta, responde exactamente:
-            'Información no disponible en tus documentos actuales.'
-            No utilices conocimientos externos ni inventes información.
-            """
-
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", system_prompt),
-                ("human", "{input}"),
-            ])
-
-            llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3, google_api_key=self.api_key)
-            combine_docs_chain = create_stuff_documents_chain(llm, prompt)
-            self.rag_chain = create_retrieval_chain(vectorstore.as_retriever(search_kwargs={"k": 3}), combine_docs_chain)
+            # Invocamos a Gemini pasándole las dos variables que pide el prompt
+            respuesta = self.chain.invoke({
+                "context": contexto,
+                "input": pregunta
+            })
             
-            print("Motor RAG inicializado correctamente.")
+            return respuesta.content
             
         except Exception as e:
-            print(f"Error al inicializar el motor RAG: {e}")
-
-    def consultar(self, pregunta: str) -> str:
-        if not self.rag_chain:
-            return "Error: El motor RAG no está listo."
-        
-        respuesta = self.rag_chain.invoke({"input": pregunta})
-        return respuesta["answer"]
-
-
-# """
-# PRUEBA PARA VERIFICAR QUE FUNCIONA CORRECTAMENTE 
-# """
-
-# if __name__ == "__main__":
-#     # Como se agrego load_dotenv() arriba, aquí abajo ya no es estrictamente necesario
-#     ruta_docs_prueba = r"C:\Users\aryhd\OneDrive\Documentos\9no cuatri\Clase Gio\Rag_borrador\mis_documentos"
-    
-#     print("--- INICIANDO PRUEBA LOCAL DEL RAG ---")
-#     motor = MotorRAG(ruta_docs_prueba)
-    
-#     pregunta_prueba = "¿Qué es un commit o cómo se guardan los cambios en Git?"
-#     print(f"\nUsuario: {pregunta_prueba}")
-#     print("Pensando...\n")
-    
-#     respuesta = motor.consultar(pregunta_prueba)
-#     print(f"Lumina: {respuesta}")
+            raise RuntimeError(f"Error de Gemini al generar respuesta: {str(e)}")

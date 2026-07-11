@@ -1,6 +1,7 @@
 from app.services.rag.loader import DocumentLoaderService
 from app.services.rag.chunker import DocumentChunkerService
 from app.services.rag.embeddings import VectorStoreService
+from app.services.rag.rag_service import RagService # <-- Agregamos el servicio de Gemini
 import os
 
 class RagOrchestratorFacade:
@@ -10,8 +11,8 @@ class RagOrchestratorFacade:
         """
         self.loader_service = DocumentLoaderService()
         self.chunker_service = DocumentChunkerService(chunk_size=800, chunk_overlap=100)
-        # CORRECCIÓN AQUÍ: Cambiado a vector_store_service (con guion bajo)
         self.vector_store_service = VectorStoreService()
+        self.rag_service = RagService() # <-- Instanciamos el servicio del LLM
 
     def ingerir_documento(self, file_path: str, sala_id: str, documento_id: str) -> str:
         """
@@ -31,7 +32,6 @@ class RagOrchestratorFacade:
             fragmentos_listos = self.chunker_service.split_documents(paginas_extraidas)
             
             # Paso 3: Generación de Embeddings persistentes e indexación en ChromaDB
-            # Aquí ya coincidirá perfectamente con el nombre modificado arriba
             ruta_vector_id = self.vector_store_service.save_chunks_to_vectorstore(
                 chunks=fragmentos_listos,
                 sala_id=sala_id,
@@ -42,3 +42,31 @@ class RagOrchestratorFacade:
 
         except Exception as e:
             raise RuntimeError(f"Fallo crítico en el Pipeline RAG (OrchestratorFacade): {str(e)}")
+
+    def consultar_chat(self, pregunta: str, sala_id: str) -> str:
+        """
+        Fachada que coordina el flujo de respuesta del Chat RAG:
+        1. Busca en ChromaDB los fragmentos más relevantes de la sala.
+        2. Envía el contexto recuperado y la pregunta a Gemini.
+        """
+        try:
+            # Paso 1: Buscar en ChromaDB los fragmentos de texto relacionados a la pregunta
+            documentos_recuperados = self.vector_store_service.search_similar_chunks(
+                query=pregunta, 
+                sala_id=sala_id,
+                k=4 # Traemos los 4 fragmentos más relevantes
+            )
+            
+            # Paso 2: Unir los fragmentos en un solo texto gigante (el contexto)
+            contexto = "\n\n".join([doc.page_content for doc in documentos_recuperados])
+            
+            # Paso 3: Mandar a Gemini la pregunta y el contexto de los PDFs
+            respuesta_generada = self.rag_service.generar_respuesta_chat(
+                pregunta=pregunta, 
+                contexto=contexto
+            )
+            
+            return respuesta_generada
+
+        except Exception as e:
+            raise RuntimeError(f"Error al generar respuesta en el Chat RAG: {str(e)}")
