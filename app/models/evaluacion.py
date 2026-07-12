@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.db.database import Base
+from app.db.session import Base
 
 class Evaluacion(Base):
     __tablename__ = "evaluaciones"

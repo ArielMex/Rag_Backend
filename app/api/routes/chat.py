@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.core.facades.rag_orchestrator_facade import RagOrchestratorFacade
+# codigo agregado porque no existe
+from app.db.session import get_db
 
 # Definimos el enrutador para agrupar los endpoints del chat
 router = APIRouter(prefix="/api/chat", tags=["Chat RAG"])

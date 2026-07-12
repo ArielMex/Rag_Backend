@@ -8,8 +8,8 @@ load_dotenv()
 from app.core.config import settings
 from app.api.v1.router import api_router
 # 1. Agregamos "chat" a la importación junto con documentos
-from app.api.routes import documentos, chat
-from app.db.database import get_db
+from app.api.routes import documentos, chat, evaluaciones
+from app.db.session import get_db
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -35,6 +35,8 @@ def create_app() -> FastAPI:
     app.include_router(documentos.router)
     # 2. Registramos el router del chat dentro de la estructura de Luis
     app.include_router(chat.router)
+    # 3. Registramos el nuevo router de evaluaciones
+    app.include_router(evaluaciones.router)
 
     # ── Health check & Root ───────────────────────
     @app.get("/", tags=["Sistema"])
