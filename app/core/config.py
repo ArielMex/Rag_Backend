@@ -11,13 +11,16 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000"
 
     # ── Base de datos ────────────────────────────
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/auth_db"
+    DATABASE_URL: str = "postgresql://postgres:admin2468@localhost:5432/rag_db"
 
     # ── JWT ──────────────────────────────────────
     SECRET_KEY: str = "cambia-esto-en-produccion"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    
+    # ── Gemini / RAG ─────────────────────────────
+    GEMINI_API_KEY: str
 
     @property
     def origins_list(self) -> List[str]:
