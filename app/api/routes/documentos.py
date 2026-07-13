@@ -124,3 +124,60 @@ def listar_documentos(sala_id: str, db: Session = Depends(get_db)):
         })
         
     return resultado
+
+# --- NUEVA RUTA AGREGADA PARA ELIMINAR DOCUMENTOS ---
+@router.delete("/documents/{doc_id}", status_code=status.HTTP_200_OK)
+def eliminar_documento(doc_id: str, db: Session = Depends(get_db)):
+    """
+    Elimina un documento completamente del sistema (Triple limpieza):
+    1. Disco duro (storage local)
+    2. Base de datos vectorial (ChromaDB a través de RAG Facade)
+    3. Base de datos SQL (PostgreSQL)
+    """
+    # 1. Verificamos que el documento exista en la base de datos SQL
+    doc = db.query(Documento).filter(Documento.id == doc_id).first()
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El documento no existe o ya fue eliminado."
+        )
+
+    # 2. LIMPIEZA DE DISCO: Borramos el PDF físico
+    # Reconstruimos el nombre exacto con el que se guardó (UUID_Nombre)
+    file_location = os.path.join(STORAGE_DIR, f"{doc.id}_{doc.nombre_archivo}")
+    if os.path.exists(file_location):
+        try:
+            os.remove(file_location)
+        except Exception as e:
+            # Si el archivo está bloqueado por el sistema, lanzamos error
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al intentar borrar el archivo físico: {str(e)}"
+            )
+
+    # 3. LIMPIEZA DE CEREBRO (Vectores): Borramos de ChromaDB
+    try:
+        # Aquí invocamos el método de tu fachada RAG para borrar los embeddings
+        if hasattr(rag_facade, 'eliminar_documento'):
+            rag_facade.eliminar_documento(doc.id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al limpiar la base de datos vectorial: {str(e)}"
+        )
+
+    # 4. LIMPIEZA DE BASE DE DATOS: Borramos el registro SQL
+    try:
+        db.delete(doc)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al eliminar el registro de la base de datos."
+        )
+
+    return {
+        "status": "success",
+        "message": f"Documento '{doc.nombre_archivo}' eliminado de todos los sistemas con éxito."
+    }

@@ -1,13 +1,14 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
 from app.core.config import settings
 from app.api.v1.router import api_router
-# 1. Agregamos "chat" a la importación junto con documentos
 from app.api.routes import documentos, chat, evaluaciones
 from app.db.session import get_db
 
@@ -33,10 +34,16 @@ def create_app() -> FastAPI:
     # ── Routers ───────────────────────────────────
     app.include_router(api_router)
     app.include_router(documentos.router)
-    # 2. Registramos el router del chat dentro de la estructura de Luis
     app.include_router(chat.router)
-    # 3. Registramos el nuevo router de evaluaciones
     app.include_router(evaluaciones.router)
+    
+    # ── Rutas Estáticas (El arreglo) ────────────────
+    # Obtenemos la ruta absoluta de la carpeta base (Rag_Backend)
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    STORAGE_DIR = os.path.join(BASE_DIR, "storage")
+    
+    # Montamos la carpeta storage asegurando la ruta absoluta
+    app.mount("/static", StaticFiles(directory=STORAGE_DIR), name="static")
 
     # ── Health check & Root ───────────────────────
     @app.get("/", tags=["Sistema"])
