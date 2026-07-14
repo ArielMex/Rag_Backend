@@ -5,8 +5,8 @@ import bcrypt
 
 from app.core.config import settings
 
-# ── Hashing de contraseñas ───────────────────────────────────────────────────
-# Usamos bcrypt directamente (compatible con Python 3.12+).
+# Hashing de contraseñas
+# Usamos bcrypt directamente
 
 def hash_password(plain: str) -> str:
     """Devuelve el hash bcrypt de una contraseña en texto plano."""
@@ -18,7 +18,7 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
-# ── JWT ──────────────────────────────────────────────────────────────────────
+# JWT
 def _create_token(data: dict[str, Any], expires_delta: timedelta) -> str:
     payload = data.copy()
     expire = datetime.now(timezone.utc) + expires_delta

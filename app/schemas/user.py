@@ -2,10 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.models.user import UserRole
 
-
-# ═══════════════════════════════════════════════════════════
-#  USUARIO
-# ═══════════════════════════════════════════════════════════
+#  USER module
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -69,10 +66,7 @@ class UserList(BaseModel):
     total: int
     items: list[UserPublic]
 
-
-# ═══════════════════════════════════════════════════════════
-#  AUTENTICACIÓN
-# ═══════════════════════════════════════════════════════════
+# AUTH module
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -83,7 +77,7 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
-    expires_in: int  # segundos
+    expires_in: int
 
 
 class RefreshRequest(BaseModel):

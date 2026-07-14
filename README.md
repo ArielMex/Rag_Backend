@@ -190,11 +190,14 @@ pytest tests/ -v
 - METRICAS
 - El registro de métricas se crea de forma perezosa (`get_or_create_metrica`): si el usuario aún no tiene fila en `metricas_estudio`, se genera con valores en cero al primer acceso.
 - Falta registrar el router en `app/api/v1/router.py`:
+
 - SALAS ESTUDIO
 - El `codigo_acceso` se genera en el backend (6 caracteres, mayúsculas + dígitos) y se valida que sea único antes de guardar la sala; no se recibe desde el cliente.
 - `GET /salas/{sala_id}/miembros` actualmente es accesible para cualquier usuario autenticado, no solo para miembros de esa sala. Falta decidir si se restringe (ej. validar que `current_user` pertenezca a `usuarios_salas` antes de listar).
 - No hay endpoint de "eliminar sala" ni rol de "dueño de sala" todavía — la relación `usuarios_salas` trata a todos los miembros por igual. Si se necesita distinguir un admin de sala, habría que agregar un campo (ej. `rol` en `usuarios_salas`).
 - Falta registrar el router en `app/api/v1/router.py`
+
+-Un riesgo a tener presente: si el backend valida unicidad de username y por mala suerte el sufijo aleatorio colisiona con uno existente, el registro fallará con un error del backend (probablemente 400/409). El mensaje llegará vía resultado["error"] y se mostrará con st.error(...), pero el usuario no entenderá por qué (verá algo como "username ya existe" sin haber escrito uno).
 
 ## Flujo de Trabajo y Estrategia de Branching
 

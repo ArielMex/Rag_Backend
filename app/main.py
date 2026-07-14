@@ -22,7 +22,7 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # ── CORS ──────────────────────────────────────
+    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.origins_list,
@@ -31,13 +31,14 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # ── Routers ───────────────────────────────────
+    # fix: router en el archivo routers
+    # Routers
     app.include_router(api_router)
     app.include_router(documentos.router)
     app.include_router(chat.router)
     app.include_router(evaluaciones.router)
     
-    # ── Rutas Estáticas (El arreglo) ────────────────
+    # Rutas Estáticas (El arreglo)
     # Obtenemos la ruta absoluta de la carpeta base (Rag_Backend)
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     STORAGE_DIR = os.path.join(BASE_DIR, "storage")
@@ -45,7 +46,6 @@ def create_app() -> FastAPI:
     # Montamos la carpeta storage asegurando la ruta absoluta
     app.mount("/static", StaticFiles(directory=STORAGE_DIR), name="static")
 
-    # ── Health check & Root ───────────────────────
     @app.get("/", tags=["Sistema"])
     def read_root():
         return {"message": "Bienvenido a la API de la plataforma educativa RAG."}

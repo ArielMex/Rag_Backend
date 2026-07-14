@@ -17,8 +17,6 @@ from app.core.exceptions import (
 class UserService:
     """Servicio con toda la lógica de negocio de usuarios."""
 
-    # ── Consultas ────────────────────────────────────────────────────────────
-
     def get_by_id(self, db: Session, user_id: int) -> User:
         user = db.get(User, user_id)
         if not user:
@@ -45,7 +43,7 @@ class UserService:
         users = db.scalars(query.offset(skip).limit(limit)).all()
         return total or 0, list(users)
 
-    # ── Creación ─────────────────────────────────────────────────────────────
+    # create
 
     def create_user(self, db: Session, data: UserCreate) -> User:
         if self.get_by_email(db, data.email):
@@ -73,7 +71,7 @@ class UserService:
         db.refresh(user)
         return user
 
-    # ── Actualización ─────────────────────────────────────────────────────────
+    # update
 
     def update_user(self, db: Session, user_id: int, data: UserUpdate) -> User:
         user = self.get_by_id(db, user_id)
@@ -111,7 +109,7 @@ class UserService:
         user.hashed_password = hash_password(data.new_password)
         db.commit()
 
-    # ── Eliminación / desactivación ───────────────────────────────────────────
+    # delete / deactivate 
 
     def deactivate(self, db: Session, user_id: int) -> User:
         user = self.get_by_id(db, user_id)
@@ -125,7 +123,7 @@ class UserService:
         db.delete(user)
         db.commit()
 
-    # ── Autenticación ─────────────────────────────────────────────────────────
+    # auth
 
     def authenticate(self, db: Session, email: str, password: str) -> User:
         user = self.get_by_email(db, email)
@@ -133,12 +131,12 @@ class UserService:
             raise CredentialsException("Email o contraseña incorrectos")
         if not user.is_active:
             raise InactiveUserException()
-        # Actualizar última sesión
+
         user.last_login = datetime.now(timezone.utc)
         db.commit()
         return user
 
-    # ── Permisos ──────────────────────────────────────────────────────────────
+    # permits
 
     @staticmethod
     def require_admin(user: User) -> None:
