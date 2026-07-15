@@ -64,6 +64,7 @@ def crear_nueva_sala(sala: SalaEstudioCreate, creador_id: str = None):
     return nueva_sala
 
 @router.get("/mis-salas/{usuario_id}", response_model=List[SalaEstudioResponse])
+<<<<<<< Updated upstream
 def listar_salas_de_usuario(usuario_id: str):
     """
     Retorna el catálogo de salas a las que un usuario específico está inscrito.
@@ -79,6 +80,39 @@ def listar_salas_de_usuario(usuario_id: str):
     ]
     
     return salas_usuario
+=======
+def listar_salas_de_usuario(usuario_id: str, db: Session = Depends(get_db)):
+    try:
+        # Intentamos castear el ID de usuario. 
+        # Si no es un número válido, lanzamos un error en lugar de devolver todo.
+        try:
+            uid = int(usuario_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El ID de usuario proporcionado no tiene un formato válido."
+            )
+
+        # Hacemos el JOIN para traer exclusivamente las salas donde el usuario está registrado
+        salas = db.query(SalaEstudio).join(
+            UsuarioSala, 
+            SalaEstudio.id == UsuarioSala.sala_id
+        ).filter(
+            UsuarioSala.usuario_id == uid
+        ).all()
+        
+        # Si no tiene registros, simplemente retorna una lista vacía []
+        return salas
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno al obtener las salas: {str(e)}"
+        )
+>>>>>>> Stashed changes
 
 @router.post("/unirse", response_model=UsuarioSalaResponse, status_code=status.HTTP_201_CREATED)
 def unirse_a_sala(payload: UsuarioSalaCreate, codigo_verificacion: str):
