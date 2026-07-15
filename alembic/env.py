@@ -9,7 +9,7 @@ load_dotenv()
 # Importa los modelos para que Alembic los detecte
 from app.db.session import Base
 import app.models.user  # noqa: F401 — registra el modelo en metadata
-
+import app.models.metrica_estudio
 config = context.config
 
 # Lee DATABASE_URL del entorno si existe

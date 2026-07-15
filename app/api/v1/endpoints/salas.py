@@ -1,105 +1,55 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+
+from app.db.session import get_db
+from app.api.v1.dependencies import get_current_user
 from app.schemas.sala_estudio import SalaEstudioCreate, SalaEstudioResponse
-from app.schemas.usuario_sala import UsuarioSalaCreate, UsuarioSalaResponse
+from app.schemas.usuario_sala import UnirseSalaRequest, UsuarioSalaResponse
+from app.services.salas_estudio_service import crear_sala, listar_mis_salas, unirse_a_sala, salir_de_sala, listar_miembros
 
-router = APIRouter(prefix="/salas", tags=["Salas"])
+router = APIRouter(prefix="/salas", tags=["Salas de estudio"])
 
-# Base de datos simulada en memoria (Mock) usando la estructura exacta de tus esquemas
-DB_SALAS = [
-    {
-        "id": "arch",
-        "nombre_sala": "Arquitectura de Software",
-        "codigo_acceso": "ARC-2026",
-        "created_at": datetime.now()
-    },
-    {
-        "id": "calc",
-        "nombre_sala": "Cálculo II",
-        "codigo_acceso": "CALC-INTEGRAL",
-        "created_at": datetime.now()
-    }
-]
 
-# Tabla intermedia mockeada estructurada exactamente como tu esquema UsuarioSalaResponse
-DB_USUARIOS_SALAS = [
-    {
-        "usuario_id": "ariel_mock",
-        "sala_id": "arch",
-        "fecha_ingreso": datetime.now()
-    }
-]
+@router.post("/", response_model=SalaEstudioResponse, status_code=status.HTTP_201_CREATED)
+def crear_sala(
+    payload: SalaEstudioCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return sala_estudio_service.crear_sala(db, payload.nombre_sala, current_user.id)
 
-@router.get("/listar", response_model=List[SalaEstudioResponse])
-def listar_salas():
-    """Trae todas las salas de estudio registradas."""
-    return DB_SALAS
 
-@router.post("/crear", response_model=SalaEstudioResponse, status_code=status.HTTP_201_CREATED)
-def crear_nueva_sala(sala: SalaEstudioCreate):
-    """Crea una nueva sala de estudio validando el ID único."""
-    # Verificar si el ID ya existe en la simulación
-    if any(s["id"] == sala.id for s in DB_SALAS):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"La sala con el ID '{sala.id}' ya existe."
-        )
-        
-    nueva_sala = {
-        "id": sala.id,
-        "nombre_sala": sala.nombre_sala,
-        "codigo_acceso": sala.codigo_acceso,
-        "created_at": datetime.now()
-    }
-    DB_SALAS.append(nueva_sala)
-    return nueva_sala
+@router.get("/me", response_model=List[SalaEstudioResponse])
+def listar_mis_salas(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return sala_estudio_service.listar_mis_salas(db, current_user.id)
+
 
 @router.post("/unirse", response_model=UsuarioSalaResponse, status_code=status.HTTP_201_CREATED)
-def unirse_a_sala(payload: UsuarioSalaCreate, codigo_verificacion: str):
-    """
-    Inscribe a un usuario en una sala validando el código de acceso de la misma.
-    """
-    # 1. Validar que la sala exista
-    sala_encontrada = next((s for s in DB_SALAS if s["id"] == payload.sala_id), None)
-    if not sala_encontrada:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="La sala de estudio especificada no existe."
-        )
+def unirse_a_sala(
+    payload: UnirseSalaRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return sala_estudio_service.unirse_a_sala(db, current_user.id, payload.codigo_acceso)
 
-    # 2. Verificar que el código coincida con el de la sala
-    if sala_encontrada["codigo_acceso"] != codigo_verificacion:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="El código de acceso es incorrecto."
-        )
 
-    # 3. Validar duplicados usando la clave compuesta (usuario_id + sala_id)
-    ya_registrado = any(
-        rel["usuario_id"] == payload.usuario_id and rel["sala_id"] == payload.sala_id
-        for rel in DB_USUARIOS_SALAS
-    )
-    if ya_registrado:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Este usuario ya está inscrito en esta sala de estudio."
-        )
+@router.delete("/{sala_id}/salir", status_code=status.HTTP_204_NO_CONTENT)
+def salir_de_sala(
+    sala_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    sala_estudio_service.salir_de_sala(db, current_user.id, sala_id)
 
-    # 4. Registrar la nueva inscripción en memoria
-    nueva_relacion = {
-        "usuario_id": payload.usuario_id,
-        "sala_id": payload.sala_id,
-        "fecha_ingreso": datetime.now()
-    }
-    DB_USUARIOS_SALAS.append(nueva_relacion)
-    return nueva_relacion
 
 @router.get("/{sala_id}/miembros", response_model=List[UsuarioSalaResponse])
-def listar_miembros_de_sala(sala_id: str):
-    """
-    Devuelve todos los registros de inscripción correspondientes a una sala.
-    """
-    # Filtrar las relaciones en base al ID de la sala
-    miembros = [rel for rel in DB_USUARIOS_SALAS if rel["sala_id"] == sala_id]
-    return miembros
+def listar_miembros(
+    sala_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return sala_estudio_service.listar_miembros(db, sala_id)

@@ -5,6 +5,41 @@ Módulo de gestión de usuarios y autenticación con JWT para Python 3.12+ y Pos
 
 ---
 
+## Instalación rápida
+
+```bash
+# 1. Clonar / descomprimir el módulo
+cd auth_module
+
+# 2. Crear entorno virtual
+python3 -m venv venv
+source venv/bin/activate       # Linux/Mac
+# venv\Scripts\activate        # Windows
+
+# 3. Instalar dependencias
+pip install -r requirements.txt
+
+# 4. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tu DATABASE_URL y SECRET_KEY
+
+# 5. Crear la base de datos en PostgreSQL
+psql -U postgres -c "CREATE DATABASE auth_db;"
+
+# 6. Ejecutar migraciones
+alembic revision --autogenerate -m "create users table"
+alembic upgrade head
+
+# 7. Levantar el servidor
+python run.py
+# ó directamente:
+uvicorn app.main:app --reload
+```
+
+Documentación interactiva: http://localhost:8000/docs
+
+---
+
 ## Estructura del proyecto
 
 ```
@@ -50,41 +85,6 @@ auth_module/
 
 ---
 
-## Instalación rápida
-
-```bash
-# 1. Clonar / descomprimir el módulo
-cd auth_module
-
-# 2. Crear entorno virtual
-python3 -m venv venv
-source venv/bin/activate       # Linux/Mac
-# venv\Scripts\activate        # Windows
-
-# 3. Instalar dependencias
-pip install -r requirements.txt
-
-# 4. Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tu DATABASE_URL y SECRET_KEY
-
-# 5. Crear la base de datos en PostgreSQL
-psql -U postgres -c "CREATE DATABASE auth_db;"
-
-# 6. Ejecutar migraciones
-alembic revision --autogenerate -m "create users table"
-alembic upgrade head
-
-# 7. Levantar el servidor
-python run.py
-# ó directamente:
-uvicorn app.main:app --reload
-```
-
-Documentación interactiva: http://localhost:8000/docs
-
----
-
 ## Endpoints
 
 ### Autenticación (`/api/v1/auth`)
@@ -116,7 +116,7 @@ Documentación interactiva: http://localhost:8000/docs
 | GET     | `/metricas/me`                 | Obtiene (o crea) mis métricas de estudio | Bearer |
 | POST    | `/metricas/me/racha`           | Incrementa mi racha de días en 1         | Bearer |
 | POST    | `/metricas/me/racha/reiniciar` | Reinicia mi racha a 0                     | Bearer |
-| POST    | `/metricas/me/examen`          | Registra el puntaje de mi último examen  | Bearer |
+| POST    | `/metricas/me/tiempo-estudio`  | Acumula segundos de tiempo de estudio(suma, no reemplaza)  | Bearer |
 
 ### Endpoints (`/api/v1/salas`)
 
@@ -148,15 +148,6 @@ Cliente                          Servidor
   │── POST /auth/refresh ───────────►│
   │   {refresh_token}                │ valida refresh JWT
   │◄─ {access_token} ────────────────│
-```
-
----
-
-## Tests
-
-```bash
-pip install pytest
-pytest tests/ -v
 ```
 
 ---

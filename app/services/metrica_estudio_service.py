@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.metrica_estudio import MetricaEstudio
+from datetime import datetime, timedelta
 import uuid
 
 
@@ -29,16 +30,6 @@ def get_or_create_metrica(db: Session, usuario_id: str) -> MetricaEstudio:
         metrica = create_metrica_default(db, usuario_id)
     return metrica
 
-
-def registrar_examen(db: Session, usuario_id: str, puntaje: int) -> MetricaEstudio:
-    """Actualiza el puntaje del último examen presentado."""
-    metrica = get_or_create_metrica(db, usuario_id)
-    metrica.puntaje_ultimo_examen = puntaje
-    db.commit()
-    db.refresh(metrica)
-    return metrica
-
-
 def incrementar_racha(db: Session, usuario_id: str) -> MetricaEstudio:
     """Suma un día a la racha de estudio del usuario."""
     metrica = get_or_create_metrica(db, usuario_id)
@@ -54,4 +45,14 @@ def reiniciar_racha(db: Session, usuario_id: str) -> MetricaEstudio:
     metrica.racha_dias = 0
     db.commit()
     db.refresh(metrica)
+    return metrica
+
+def acumular_tiempo_estudio(metrica: MetricaEstudio, segundos_a_agregar: int) -> MetricaEstudio:
+    ahora = datetime.utcnow()
+    
+    if ahora - metrica.tiempo_estudio_reiniciado_en >= timedelta(days=7):
+        metrica.tiempo_estudio_segundos = 0
+        metrica.tiempo_estudio_reiniciado_en = ahora
+
+    metrica.tiempo_estudio_segundos += segundos_a_agregar
     return metrica

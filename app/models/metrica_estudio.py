@@ -7,9 +7,10 @@ class MetricaEstudio(Base):
     __tablename__ = "metricas_estudio"
 
     id = Column(String(255), primary_key=True)
-    usuario_id = Column(String(255), ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
+    users_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     racha_dias = Column(Integer, default=0, server_default="0")
-    puntaje_ultimo_examen = Column(Integer, default=0, server_default="0")
+    tiempo_estudio_segundos = Column(Integer, default=0, server_default="0")
+    tiempo_estudio_reiniciado_en = Column(DateTime, server_default=func.now())  # NUEVO: marca el inicio de la semana actual
     
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     usuario = relationship("Usuario", backref="metricas")
