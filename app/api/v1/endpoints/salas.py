@@ -37,7 +37,7 @@ def listar_salas():
     return DB_SALAS
 
 @router.post("/crear", response_model=SalaEstudioResponse, status_code=status.HTTP_201_CREATED)
-def crear_nueva_sala(sala: SalaEstudioCreate):
+def crear_nueva_sala(sala: SalaEstudioCreate, creador_id: str = None):
     """Crea una nueva sala de estudio validando el ID único."""
     # Verificar si el ID ya existe en la simulación
     if any(s["id"] == sala.id for s in DB_SALAS):
@@ -53,7 +53,32 @@ def crear_nueva_sala(sala: SalaEstudioCreate):
         "created_at": datetime.now()
     }
     DB_SALAS.append(nueva_sala)
+    
+    if creador_id:
+        DB_USUARIOS_SALAS.append({
+            "usuario_id": creador_id,
+            "sala_id": sala.id,
+            "fecha_ingreso": datetime.now()
+        })
+    
     return nueva_sala
+
+@router.get("/mis-salas/{usuario_id}", response_model=List[SalaEstudioResponse])
+def listar_salas_de_usuario(usuario_id: str):
+    """
+    Retorna el catálogo de salas a las que un usuario específico está inscrito.
+    """
+    salas_asociadas = [
+        rel["sala_id"] for rel in DB_USUARIOS_SALAS
+        if rel["usuario_id"] == usuario_id
+    ]
+    
+    salas_usuario = [
+        sala for sala in DB_SALAS
+        if sala["id"] in salas_asociadas
+    ]
+    
+    return salas_usuario
 
 @router.post("/unirse", response_model=UsuarioSalaResponse, status_code=status.HTTP_201_CREATED)
 def unirse_a_sala(payload: UsuarioSalaCreate, codigo_verificacion: str):
